@@ -25,6 +25,16 @@
       border: 2px solid #3e8e41;
       background-size: cover;
       position: relative;
+      overflow: hidden; /* Prevent dots from overflowing */
+    }
+
+    .dot {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: red; /* Color of the dot */
+      border-radius: 50%; /* Make it round */
+      transform: translate(-50%, -50%); /* Center the dot */
     }
 
     .controls {
@@ -104,6 +114,9 @@
       const x = Math.round(e.clientX - rect.left); // Round x-coordinate to the nearest whole number
       const y = e.clientY - rect.top;
 
+      // Create a dot at the clicked position
+      createDot(x, y);
+
       if (!firstPoint) {
         firstPoint = { x, y }; // Store the first selected point
       }
@@ -121,6 +134,14 @@
         copyBtn.disabled = false;
       }
     });
+
+    function createDot(x, y) {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+      imageContainer.appendChild(dot);
+    }
 
     function displayBezierCurveCode() {
       if (points.length === 3) {
@@ -146,6 +167,7 @@
       firstPoint = null; // Reset the first point
       bezierCode.textContent = 'Bezier commands: 0'; // Reset count
       copyBtn.disabled = true;
+      imageContainer.innerHTML = ''; // Clear all dots
     });
 
     copyBtn.addEventListener('click', () => {
