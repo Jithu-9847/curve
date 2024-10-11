@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bezier Curve Points Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      margin-top: 20px;
+    }
+
+    #image-container {
+      width: 500px;
+      height: 500px;
+      border: 2px solid #3e8e41;
+      background-size: cover;
+      position: relative;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      margin-left: 20px;
+    }
+
+    #bezierCode {
+      font-size: 18px;
+      color: #3e8e41;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #3e8e41;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 150px;
+    }
+
+    button:hover {
+      background-color: #337836;
+    }
+
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div>
+      <input type="file" id="imageInput" accept="image/*">
+      <div id="image-container"></div>
+    </div>
+    
+    <div class="controls">
+      <div id="bezierCode">Bezier commands: 0</div>
+      <button id="clearBtn" disabled>Clear Points</button>
+      <button id="copyBtn" disabled>Copy to Clipboard</button>
+    </div>
+  </div>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const imageContainer = document.getElementById('image-container');
+    const bezierCode = document.getElementById('bezierCode');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    let points = [];
+    let lastPoint = null;
+    let bezierCommands = []; // Array to store all Bezier curve commands
+    let firstPoint = null; // Variable to store the first selected point
+
+    // Load the selected image into the div
+    imageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imageContainer.style.backgroundImage = `url(${e.target.result})`;
+        };
+        reader.readAsDataURL(file);
+        clearBtn.disabled = false;
+      }
+    });
+
+    // Capture points when clicking on the image container
+    imageContainer.addEventListener('click', (e) => {
+      const rect = imageContainer.getBoundingClientRect();
+      const x = Math.round(e.clientX - rect.left); // Round x-coordinate to the nearest whole number
+      const y = e.clientY - rect.top;
+
+      if (!firstPoint) {
+        firstPoint = { x, y }; // Store the first selected point
+      }
+
+      if (lastPoint) {
+        points.push(lastPoint); // Push the last point from the previous curve as the first point for the new curve
+        lastPoint = null;
+      }
+
+      points.push({ x, y });
+
+      if (points.length === 3) {
+        lastPoint = points[2]; // Save the last point for the next curve
+        displayBezierCurveCode();
+        copyBtn.disabled = false;
+      }
+    });
+
+    function displayBezierCurveCode() {
+      if (points.length === 3) {
+        const [p1, p2, p3] = points;
+        const bezierCommand = `ctx.bezierCurveTo(${p1.x}, ${p1.y}, ${p2.x}, ${p2.y}, ${p3.x}, ${p3.y});`;
+        
+        if (bezierCommands.length === 0) {
+          // Include moveTo command with the first selected point
+          const moveToCommand = `ctx.moveTo(${firstPoint.x}, ${firstPoint.y});`;
+          bezierCommands.push(moveToCommand); // Store the moveTo command
+        }
+        
+        bezierCommands.push(bezierCommand); // Store the bezier command
+        bezierCode.textContent = `Bezier commands: ${bezierCommands.length}`; // Display the number of commands
+        points = []; // Reset points for the next curve, but keep the first point
+      }
+    }
+
+    clearBtn.addEventListener('click', () => {
+      points = [];
+      lastPoint = null;
+      bezierCommands = []; // Clear all stored commands
+      firstPoint = null; // Reset the first point
+      bezierCode.textContent = 'Bezier commands: 0'; // Reset count
+      copyBtn.disabled = true;
+    });
+
+    copyBtn.addEventListener('click', () => {
+      const allBezierCommands = bezierCommands.join('\n');
+      if (allBezierCommands) {
+        navigator.clipboard.writeText(allBezierCommands).then(() => {
+          alert('All Bezier curve commands copied to clipboard!');
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
